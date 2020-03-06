@@ -92,12 +92,12 @@ def n_reinas(n):
             restr[(i,j)] = n_reinas_restr(i,j)
     return PSR(dom, restr)
 
-psr_n4 = n_reinas(4)
+#psr_n4 = n_reinas(4)
 #psr_n4.variables
 # [1, 2, 3, 4]
 #psr_n4.dominios
 # {1: [1, 2, 3, 4], 2: [1, 2, 3, 4], 3: [1, 2, 3, 4], 4: [1, 2, 3, 4]}
-print(psr_n4.restricciones)
+#print(psr_n4.restricciones)
 # {(1, 2): <function <lambda> at ...>,
 #  (1, 3): <function <lambda> at ...>,
 #  (1, 4): <function <lambda> at ...>,
@@ -106,9 +106,9 @@ print(psr_n4.restricciones)
 #  (2, 4): <function <lambda> at ...>}
 # >>> psr_n4.vecinos
 # {1: [2, 3, 4], 2: [1, 3, 4], 3: [1, 2, 4], 4: [1, 2, 3]}
-print(psr_n4.restricciones[(1,4)](2,3))
+#print(psr_n4.restricciones[(1,4)](2,3))
 # True
-print(psr_n4.restricciones[(1,4)](4,1))
+#print(psr_n4.restricciones[(1,4)](4,1))
 # False
 
 # Definir funcion coloreado_mapa(mapa,colores) devolviendo un PSR correspondiente a colorear el mapa con esos colores
@@ -182,8 +182,36 @@ def argmin_dict_rnd(dic,fn):
             lista_claves_min.append(x)
     return random.choice(lista_claves_min)
 
+def argmin_dict_max_restr(dic,restr,fn):
+    lista_claves_min = list()
+    minimo = float("infinity")
+    for (x,v) in dic.items():
+        val = fn(v)
+        if val < minimo:
+            minimo = val
+            lista_claves_min = [x]
+        elif fn(v) == minimo:
+            lista_claves_min.append(x)
+    if len(lista_claves_min) > 1:
+        minimo = float("-inf")
+        n_apariciones = dict()
+        for var in lista_claves_min:
+            contador = 0
+            for (x,y) in restr:
+                if x == var or y == var:
+                    contador +=1
+            n_apariciones[var] = contador
+        for (k,v) in n_apariciones.items():
+            if v > minimo:
+                minimo= v
+                minima_clave = k
+    return minima_clave
+
 def mrv(doms):
     return argmin_dict_rnd(doms,len)
+
+def mrv2(doms,restr):
+    return argmin_dict_max_restr(doms,restr,len)
 
 def algun_dominio_vacio(doms):
     return any((not d for d in doms.values()))
@@ -228,7 +256,7 @@ def psr_backtracking_fc_mrv(psr):
 
     return psr_backtracking_fc_mrv_rec(dict(),copy.deepcopy(psr.dominios))#copy.deepcopy guarda una copia de la variable
 
-print(psr_backtracking_fc_mrv(n_reinas(88)))
+#print(psr_backtracking_fc_mrv(coloreado_mapa(mapa_andalucia,colores_disp)))
 
 # ===================================================================
 # Parte II: Algoritmo de consistencia de arcos AC3
@@ -267,13 +295,14 @@ print(psr_backtracking_fc_mrv(n_reinas(88)))
 # True
 # >>> restriccion_arco(psr_n4, 1, 2)(3, 2)
 # False
+def restriccion_arco(psr,x,y):
 
+    if (x,y) in psr.restricciones:
+        return psr.restricciones[(x,y)]
+    else:
+        return lambda u,v: psr.restricciones[(y,x)](u,v) #Me permite comprobar la restriccion con los argumentos
+                                                         #en el orden en el que están en el arco
 
-
-
-
-
-       
 # ===================================================================
 # Ejercicio 3
 # ===================================================================
@@ -284,25 +313,19 @@ print(psr_backtracking_fc_mrv(n_reinas(88)))
 # arcos. El primer elemento será la variable distinguida y el segundo
 # la variable asociada.
 
+def arcos(psr):
+    return {(x,y) for x in psr.variables for y in psr.vecinos[x]} #También se puede recorrer las restricciones
 # Ejemplo:
 
-# >>> psr_n4 = n_reinas(4)
-# >>> arcos_n4 = psr_n4.arcos()
-# >>> arcos_n4
+#psr_n4 = n_reinas(4)
+#arcos_n4 = arcos(psr_n4)
+#print(arcos_n4)
 # [(1, 2), (2, 1), (1, 3), (3, 1), (2, 3), (3, 2), (3, 4), (4, 3),
 #  (2, 4), (4, 2), (1, 4), (4, 1)]
 # >>> psr_n4.restriccion_arco(1, 2)(4, 1)
 # True
 # >>> psr_n4.restriccion_arco(1, 2)(2, 3)
 # False
-
-
-
-
-
-
-
-
 
 # ===================================================================
 # Ejercicio 4
@@ -317,11 +340,28 @@ print(psr_backtracking_fc_mrv(n_reinas(88)))
 # destructiva (es decir, después de ejecutar la llamada "AC3(psr,
 # doms)", en el diccionario doms debe quedar actualizados.
 
+        
+def AC3(psr,doms):
+    cola = arcos(psr)
+    while cola:
+        (x,y) = cola.pop()
+        func = restriccion_arco(psr, x,y)
+        dom_nuevo = []
+        modificado = False
+        for vx in doms[x]:
+            if any(func(vx,vy) for vy in doms[y]):
+                dom_nuevo.append(vx)
+            else:
+                modificado = True
+        if modificado:
+            doms[x] = dom_nuevo
+            cola.update({(z,x) for z in psr.vecinos[x] if z != y}) #Y son las variables que no cumplen la restriccion 
+    
 # Ejemplos:
 
-# >>> psr_n4=n_reinas(4)
-# >>> dominios = {1:[2,4],2:[1,2,3,4],3:[1,2,3,4],4:[1,2,3,4]}
-# >>> AC3(psr_n4, dominios)
+#psr_n4=n_reinas(4)
+#dominios = {1:[2,4],2:[1,2,3,4],3:[1,2,3,4],4:[1,2,3,4]}
+#print(AC3(psr_n4, dominios))
 # >>> dominios
 # {1: [2, 4], 2: [1, 4], 3: [1, 3], 4: [1, 3, 4]}
 
@@ -362,10 +402,20 @@ print(psr_backtracking_fc_mrv(n_reinas(88)))
 # partir en dos el dominio se deja a libre elección (basta con que sea una
 # partición en dos). 
 
+def parte_dominios(doms):
+    doms_copia = doms.copy()
+    doms_copia_2 = doms.copy()
+    for x in doms:
+        if len(doms[x]) > 1:
+            doms_copia[x] = [doms[x][0]]
+            doms_copia_2[x] = doms[x][1:]
+    return doms_copia,doms_copia_2
+ 
+
 # Ejemplo:
 
-# >>> doms4_1={1: [2, 4], 2: [1, 4], 3: [1, 3], 4: [1, 3, 4]}
-# >>> parte_dominios(doms4_1)
+#doms4_1={1: [2, 4], 2: [1, 4], 3: [1, 3], 4: [1, 3, 4]}
+
 # ({1: [2], 2: [1, 4], 3: [1, 3], 4: [1, 3, 4]}, {1: [4], 2: [1, 4], 3: [1, 3], 4: [1, 3, 4]})
 
 
@@ -381,11 +431,30 @@ print(psr_backtracking_fc_mrv(n_reinas(88)))
 # Definir la función búsqueda_AC3(psr), que recibiendo como entrada un psr
 # (tal y como se define en el ejercicio 1), aplica el algoritmo de búsqueda
 # AC-3 tal y como se define en el tema 2
+def todos_dominios_unitarios(doms):
+    return all(len(d) == 1 for d in doms.values())
+
+def ningun_dominio_vacio(doms):
+    return all(doms.values())
+
+def busqueda_AC3(psr):
+    abiertos = [psr.dominios.copy()]
+    while abiertos:
+        actual = abiertos.pop()
+        AC3(psr,actual)
+        if ningun_dominio_vacio(actual):
+            if todos_dominios_unitarios(actual):
+                return {var:dom[0] for var,dom in actual.items()}
+            else:
+                abiertos.extend(parte_dominios(actual)) #extend concatena 2 listas
+    else:
+        print("No hay solución")
+
 
 # Ejemplos:
 
-# >>> psr_nreinas4=n_reinas(4)
-# >>> busqueda_AC3(psr_nreinas4)
+psr_nreinas4=n_reinas(4)
+print(busqueda_AC3(psr_nreinas4))
 # {1: 3, 2: 1, 3: 4, 4: 2}
 # >>> psr_nreinas3=n_reinas(3)
 # >>> busqueda_AC3(psr_nreinas3)
@@ -504,102 +573,3 @@ def dibuja_tablero_n_reinas(asig):
 # |---------------------------|
 # | | | |X| | | | | | | | | | |
 # +---------------------------+
-       variables     Lista de las variables del problema
-       dominios      Diccionario que asigna a cada variable su dominio
-                     (una lista con los valores posibles)
-       restricciones Diccionario que asocia a cada tupla de variables
-                     involucrada en una restricción, una función que,
-                     dados valores de los dominios de esas variables,
-                     determina si cumplen o no la restricción.
-                     IMPORTANTE: Supondremos que para cada combinación
-                     de variables hay a lo sumo una restricción (por
-                     ejemplo, si hubiera dos restricciones binarias
-                     sobre el mismo par de variables, consideraríamos
-                     la conjunción de ambas).
-                     También supondremos que todas las restricciones
-                     son binarias
-        vecinos      Diccionario que representa el grafo del PSR,
-                     asociando a cada variable, una lista de las
-                     variables con las que comparte restricción.
-
-    El constructor recibe los valores de los atributos dominios y
-    restricciones; los otros dos atributos serán calculados al
-    construir la instancia."""
-
-    def __init__(self, dominios, restricciones):
-        """Constructor de PSRs."""
-
-        self.dominios = dominios
-        self.restricciones = restricciones
-        self.variables = list(dominios.keys())
-
-        vecinos = {v: [] for v in self.variables}
-        for v1, v2 in restricciones:
-            vecinos[v1].append(v2)
-            vecinos[v2].append(v1)
-        self.vecinos = vecinos
-
-
-# ===================================================================
-# Ejercicio 1
-# ===================================================================
-
-#   Definir una función n_reinas(n), que recibiendo como entrada un
-# número natural n, devuelva una instancia de la clase PSR,
-# correspondiente al problema de las n-reinas.
-
-# Ejemplos:
-
-def n_reinas(n):
-    def n_reinas_restr(i,j):
-        return (lambda x,y : x != y and abs(i-j) != abs(x-y)) #x e y es el valor de las variables i,j
-    dom = {i: [j for j in range(1,n+1)] for i in range(1,n+1)}
-    restr = dict()
-    for i in range(1,n):
-        for j in range(i+1,n+1):
-            restr[(i,j)] = n_reinas_restr(i,j)
-    return PSR(dom, restr)
-
-#psr_n4 = n_reinas(4)
-#psr_n4.variables
-# [1, 2, 3, 4]
-#psr_n4.dominios
-# {1: [1, 2, 3, 4], 2: [1, 2, 3, 4], 3: [1, 2, 3, 4], 4: [1, 2, 3, 4]}
-#psr_n4.restricciones
-# {(1, 2): <function <lambda> at ...>,
-#  (1, 3): <function <lambda> at ...>,
-#  (1, 4): <function <lambda> at ...>,
-#  (2, 3): <function <lambda> at ...>,
-#  (3, 4): <function <lambda> at ...>,
-#  (2, 4): <function <lambda> at ...>}
-# >>> psr_n4.vecinos
-# {1: [2, 3, 4], 2: [1, 3, 4], 3: [1, 2, 4], 4: [1, 2, 3]}
-# >>> psr_n4.restricciones[(1,4)](2,3)
-# True
-# >>> psr_n4.restricciones[(1,4)](4,1)
-# False
-
-# Definir funcion coloreado_mapa(mapa,colores) devolviendo un PSR correspondiente a colorear el mapa con esos colores
-
-mapa_andalucia = {"Huelva":["Cadiz","Sevilla"], "Sevilla":["Cadiz","Córdoba","Huelva","Málaga"],"Cadiz":["Málaga","Sevilla","Huelva"],
-                  "Córdoba": ["Jaén","Granada","Málaga","Sevilla"],"Málaga":["Cadiz","Sevilla","Córdoba","Granada"],"Jaén":["Córdoba","Granada"],
-                  "Granada":["Córdoba","Jaén","Almería","Málaga"],"Almería":["Granada"]}
-
-colores_disp = ["azul", "rojo", "verde"]
-
-def coloreado_mapa(mapa,colores):
-    dom = {i:colores for i in mapa}
-    restr = dict()
-    for i in mapa:
-        for j in mapa[i]:
-            if(j,i) not in restr:
-                restr[(i,j)] = (lambda x,y: x!=y)
-    return PSR(dom,restr)
-
-res = coloreado_mapa(mapa_andalucia,colores_disp)
-print("Dominios\n")
-print(res.dominios)
-print("\nRestricciones\n")
-print(res.restricciones)
-print("\nVecinos\n")
-print(res.vecinos)
