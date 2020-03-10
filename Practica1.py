@@ -409,12 +409,15 @@ def parte_dominios(doms):
         if len(doms[x]) > 1:
             doms_copia[x] = [doms[x][0]]
             doms_copia_2[x] = doms[x][1:]
-    return doms_copia,doms_copia_2
+        return doms_copia,doms_copia_2
  
 
 # Ejemplo:
 
-#doms4_1={1: [2, 4], 2: [1, 4], 3: [1, 3], 4: [1, 3, 4]}
+dom4 = doms4_1={1: [2, 4], 2: [1, 4], 3: [1, 3], 4: [1, 3, 4]}
+res = parte_dominios(dom4)
+print(res)
+
 
 # ({1: [2], 2: [1, 4], 3: [1, 3], 4: [1, 3, 4]}, {1: [4], 2: [1, 4], 3: [1, 3], 4: [1, 3, 4]})
 
@@ -456,8 +459,8 @@ def busqueda_AC3(psr):
 psr_nreinas4=n_reinas(4)
 print(busqueda_AC3(psr_nreinas4))
 # {1: 3, 2: 1, 3: 4, 4: 2}
-# >>> psr_nreinas3=n_reinas(3)
-# >>> busqueda_AC3(psr_nreinas3)
+psr_nreinas3=n_reinas(3)
+print(busqueda_AC3(psr_nreinas3))
 # No hay solución
 
 
@@ -498,7 +501,7 @@ def dibuja_tablero_n_reinas(asig):
 # Ejemplos:
 
 
-# >>> dibuja_tablero_n_reinas(busqueda_AC3(n_reinas(4)))
+print(dibuja_tablero_n_reinas(busqueda_AC3(n_reinas(4))))
 # +-------+
 # | | |X| |
 # |-------|
