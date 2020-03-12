@@ -242,7 +242,7 @@ def psr_backtracking_fc_mrv(psr):
         elif algun_dominio_vacio(doms):
             return None
         else:
-            var = mrv(doms)
+            var = mrv2(doms,psr.restricciones)
             dom_var = doms[var]
             del doms[var]
             for val in dom_var:
@@ -256,7 +256,7 @@ def psr_backtracking_fc_mrv(psr):
 
     return psr_backtracking_fc_mrv_rec(dict(),copy.deepcopy(psr.dominios))#copy.deepcopy guarda una copia de la variable
 
-#print(psr_backtracking_fc_mrv(coloreado_mapa(mapa_andalucia,colores_disp)))
+print(psr_backtracking_fc_mrv(coloreado_mapa(mapa_andalucia,colores_disp)))
 
 # ===================================================================
 # Parte II: Algoritmo de consistencia de arcos AC3

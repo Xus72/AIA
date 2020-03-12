@@ -20,10 +20,10 @@
 # La clase ha de constar de los siguientes atributos:
 
 # Atributos:
-# * eOcultos: Una lista con los estados que definen la variable oculta
+# * estados: Una lista con los estados que definen la variable oculta
 #             del modelo.
 #             [s_1, ..., s_n]
-# * eObservables: Una lista con los estados que definen la variable
+# * Observables: Una lista con los estados que definen la variable
 #                 observable del modelo.
 #                 [v_1, ..., v_m]
 # * pi: Un diccionario, cuyas claves son los estados, y cuyos valores
@@ -54,10 +54,15 @@
 #   [[P(E_t = v_1 | X_t = s_1), ..., P(E_t = v_m | X_t = s_1)],
 #    ...
 #    [P(E_t = v_1 | X_t = s_n), ..., P(E_t = v_m | X_t = s_n)]]
-
-
-
-
+class HMM:
+    
+    def __init__(self,estados,matriz_inicial,matriz_transicion,observables,matriz_observacion):
+        """Constructor MHH"""
+        self.estados = estados
+        self.observables = observables
+        self.pi = dict(zip(estados, matriz_inicial)) #pi = probabilidades inicial
+        self.a = {(si,sj):p for si,l in zip(estados,matriz_inicial) for sj,p in zip(estados,l)}
+        self.b = {(si,vj):p for si,l in zip(estados,matriz_observacion) for vj,p in zip(observables,l)}
 
 
 #---------------------------------------------------------------------
@@ -67,9 +72,20 @@
 # Comprobar a partir de los dos ejemplos de modelo oculto de Markov
 # vistos en teoría la correcta definición de la clase anterior.
 
+ej1_hmm = HMM(["c","f"],
+              [0.8,0.2],
+              [[0.7,0.3],[0.4,0.6]],
+              [1,2,3],
+              [[0.2,0.4,0.4],[0.5,0.4,0.1]])
 
+ej2_hmm = HMM(["l","no l"],
+              [0.5,0.5],
+              [[0.7,0.3],[0.3,0.7]],
+              ["u","no u"],
+              [[0.9,0.1],[0.2,0.8]])
 
-
+print(ej1_hmm.a)
+print(ej2_hmm.b)
 #=====================================================================
 # Parte II: Algoritmo de avance
 #=====================================================================
