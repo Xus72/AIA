@@ -61,7 +61,7 @@ class HMM:
         self.estados = estados
         self.observables = observables
         self.pi = dict(zip(estados, matriz_inicial)) #pi = probabilidades inicial
-        self.a = {(si,sj):p for si,l in zip(estados,matriz_inicial) for sj,p in zip(estados,l)}
+        self.a = {(si,sj):p for si,l in zip(estados,matriz_transicion) for sj,p in zip(estados,l)}
         self.b = {(si,vj):p for si,l in zip(estados,matriz_observacion) for vj,p in zip(observables,l)}
 
 
@@ -122,6 +122,21 @@ print(ej2_hmm.b)
 
 # Probarlo con los ejemplos vistos en clase. 
 
+def avance(hmm,observaciones):
+    alpha_list = [hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
+    for o in observaciones[1:]:
+        alpha_list = [hmm.b[(e,o)] * sum(alpha * hmm.a[(e1,e)] for alpha,e1 in zip(alpha_list,hmm.estados)) 
+        for e in hmm.estados]
+    p_seq_obs = sum(alpha_list) 
+    alpha_list_n = [alpha / p_seq_obs for alpha in alpha_list] #Normalizar
+    return p_seq_obs,alpha_list_n
+
+#Otra opcion es que normalizar en cada paso. Al final es lo mismo debido a la proporción
+#Si lo hago al final, es lo mismo ya que la alfa que obtengo es el producto de las alfas
+#Inverso del alfa me da la probabilidad
+
+print(avance(ej1_hmm,[3,1,3,2]))
+print(avance(ej2_hmm,["u","u","no u"]))
 
 #---------------------------------------------------------------------
 # Ejercicio 2.2
@@ -146,6 +161,55 @@ print(ej2_hmm.b)
 # comprobar la convergencia de la probabilidad de que haya dormido lo
 # suficiente la noche anterior para un estudiante muestra todos los
 # días los ojos rojos y se duerme en clase,
+
+
+
+#=====================================================================
+# Parte III: Algoritmo de Viterbi
+#=====================================================================
+
+# El algoritmo de Viterbi se define como sigue:
+
+# Entrada: un modelo oculto de Markov y una secuencia
+#          de observaciones, o_1, ..., o_t, 
+# Salida: La secuencia de estados más probable, dadas las
+#         observaciones. 
+
+# Este algoritmo está explicado en el tema 4 de teoría:
+
+# Inicio: nu(1,si) = b(i)(o1)pi(i) para 1 <= i <= n
+#         pr(1,si) = null
+# Para k desde 2 a t:
+#    Para j desde 1 a n:
+#         nu(k,sj) = b(j)(ok) * max([a(i,j) * nu(k-1, si) 
+#                                    para 1 <= i <= n]) 
+#         pr(k,sj) = argmax([a(i,j) * nu(k-1, si) para 1 <= i <= n])
+# Hacer s = argmax([nu(t,si) para 1 <= i <= n])
+# Devolver la secuencia de estados que lleva hasta s
+
+#---------------------------------------------------------------------
+# Ejercicio 3.1
+#---------------------------------------------------------------------
+
+# Implementar la función viterbi que use el algoritmo anterior a
+# partir de un modelo oculto de Markov y una lista de observaciones,
+# calcule la lista: [s_1, ..., s_t] con la sucesión de estados más
+# probables usando adecuadamente el algoritmo de Viterbi.
+
+
+
+
+
+
+#---------------------------------------------------------------------
+# Ejercicio 3.2
+#---------------------------------------------------------------------
+
+# Utilizar los ejemplos vistos en la teoría para comprobar la correcta
+# definición de la función anterior.
+
+
+
 
 
 
