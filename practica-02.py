@@ -72,17 +72,17 @@ class HMM:
 # Comprobar a partir de los dos ejemplos de modelo oculto de Markov
 # vistos en teoría la correcta definición de la clase anterior.
 
-ej1_hmm = HMM(["c","f"],
-              [0.8,0.2],
-              [[0.7,0.3],[0.4,0.6]],
-              [1,2,3],
-              [[0.2,0.4,0.4],[0.5,0.4,0.1]])
+ej1_hmm = HMM(["c","f"], #estados
+              [0.8,0.2], #probabilidades iniciales
+              [[0.7,0.3],[0.4,0.6]], #a
+              [1,2,3], #percepciones
+              [[0.2,0.4,0.4],[0.5,0.4,0.1]]) #b
 
-ej2_hmm = HMM(["l","no l"],
-              [0.5,0.5],
-              [[0.7,0.3],[0.3,0.7]],
-              ["u","no u"],
-              [[0.9,0.1],[0.2,0.8]])
+ej2_hmm = HMM(["l","no l"], #estados
+              [0.5,0.5], #probabilidades iniciales
+              [[0.7,0.3],[0.3,0.7]], #a
+              ["u","no u"], #percepciones
+              [[0.9,0.1],[0.2,0.8]]) #b
 
 print(ej1_hmm.a)
 print(ej2_hmm.b)
