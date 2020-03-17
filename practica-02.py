@@ -149,9 +149,18 @@ print(avance(ej2_hmm,["u","u","no u"]))
 # observaciones P(E_1 = o_1,..., E_t = o_t), como la lista con las
 # probabilidades P(X_t = s_i | E_1 = o_1, ...,E_t = o_t), 1 <= i <= n.
 
+def avance_norm(hmm,observaciones):
+    alpha_list = [hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
+    for o in observaciones[1:]:
+        alpha_list = [hmm.b[(e,o)] * sum(alpha * hmm.a[(e1,e)] for alpha,e1 in zip(alpha_list,hmm.estados)) 
+        for e in hmm.estados]
+        p_seq_obs = sum(alpha_list) 
+        alpha_list_n = [alpha / p_seq_obs for alpha in alpha_list] #Normalizar
+    return p_seq_obs,alpha_list_n
 
 
-
+print(avance_norm(ej1_hmm,[3,1,3,2]))
+print(avance_norm(ej2_hmm,["u","u","no u"]))
 
 #---------------------------------------------------------------------
 # Ejercicio 2.3
@@ -162,6 +171,11 @@ print(avance(ej2_hmm,["u","u","no u"]))
 # suficiente la noche anterior para un estudiante muestra todos los
 # días los ojos rojos y se duerme en clase,
 
+ej10_hmm = HMM(["d","n d"],
+               [0.6,0.4],
+               [[0.8,0.2],[0.2,0.8]],
+               ["ojos rojos","duerme clase"],
+               [[0.2,0.7],[0.1,0.3]])
 
 
 #=====================================================================
@@ -169,6 +183,8 @@ print(avance(ej2_hmm,["u","u","no u"]))
 #=====================================================================
 
 # El algoritmo de Viterbi se define como sigue:
+
+# Viterbi es como avance pero donde hay un sumatorio hay un maximo
 
 # Entrada: un modelo oculto de Markov y una secuencia
 #          de observaciones, o_1, ..., o_t, 
@@ -195,11 +211,26 @@ print(avance(ej2_hmm,["u","u","no u"]))
 # partir de un modelo oculto de Markov y una lista de observaciones,
 # calcule la lista: [s_1, ..., s_t] con la sucesión de estados más
 # probables usando adecuadamente el algoritmo de Viterbi.
+def arg_max(dic):
+    minimo = float("infinity")
+    for (x,v) in dic.items():
+        if v < minimo:
+            minimo = v
+            estado = x
+    return estado
 
 
+def viterbi(hmm,observaciones):
+    nu_list = [hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
+    pr_list = [] #pr es el estado anterior
+    for o in observaciones[1:]:
+        nu_list = [hmm.b[(e,o)] * max(nu * hmm.a[(e1,e)] for nu,e1 in zip(nu_list,hmm.estados)) for e in hmm.estados]
+        pr = arg_max({e:nu*hmm.a[(e1,e)] for nu,e1 in zip(nu_list,hmm.estados) for e in hmm.estados})
+        pr_list.append(pr)
+    return pr_list,nu_list
 
-
-
+print(viterbi(ej1_hmm,[3,1,3,2]))
+print(viterbi(ej2_hmm,["u","u","no u"]))
 
 #---------------------------------------------------------------------
 # Ejercicio 3.2
