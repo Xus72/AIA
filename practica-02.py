@@ -212,10 +212,10 @@ ej10_hmm = HMM(["d","n d"],
 # calcule la lista: [s_1, ..., s_t] con la sucesión de estados más
 # probables usando adecuadamente el algoritmo de Viterbi.
 def arg_max(dic):
-    minimo = float("infinity")
+    maximo = float("-infinity")
     for (x,v) in dic.items():
-        if v < minimo:
-            minimo = v
+        if v > maximo:
+            maximo = v
             estado = x
     return estado
 
@@ -224,10 +224,13 @@ def viterbi(hmm,observaciones):
     nu_list = [hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
     pr_list = [] #pr es el estado anterior
     for o in observaciones[1:]:
+        pr = arg_max({e:nu*hmm.a[(e1,e)] for nu,e in zip(nu_list,hmm.estados) for e1 in hmm.estados}) 
+        pr2 = arg_max({e:nu*hmm.a[(e,e1)] for nu,e in zip(nu_list,hmm.estados) for e1 in hmm.estados})
+        #pr1 = arg_max({e:nu*hmm.a[(e1,e)] for nu,e1 in zip(nu_list,hmm.estados) for e in hmm.estados})
         nu_list = [hmm.b[(e,o)] * max(nu * hmm.a[(e1,e)] for nu,e1 in zip(nu_list,hmm.estados)) for e in hmm.estados]
-        pr = arg_max({e:nu*hmm.a[(e1,e)] for nu,e1 in zip(nu_list,hmm.estados) for e in hmm.estados})
         pr_list.append(pr)
     return pr_list,nu_list
+
 
 print(viterbi(ej1_hmm,[3,1,3,2]))
 print(viterbi(ej2_hmm,["u","u","no u"]))
