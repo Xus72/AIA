@@ -171,6 +171,8 @@ print(avance_norm(ej2_hmm,["u","u","no u"]))
 # suficiente la noche anterior para un estudiante muestra todos los
 # días los ojos rojos y se duerme en clase,
 
+#COMPLETAR
+
 ej10_hmm = HMM(["d","n d"],
                [0.6,0.4],
                [[0.8,0.2],[0.2,0.8]],
