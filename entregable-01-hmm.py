@@ -41,7 +41,7 @@
 # hasta el momento.
 # *****************************************************************************
 
-
+import random
 
 # Lo que sigue es la implementación de la clase HMM vista en la práctica 2,
 # que representa de manera genérica un modelo oculto de Markov.
@@ -76,7 +76,8 @@ ej1_hmm=HMM(["c","f"],
             [[0.7,0.3],[0.4,0.6]],
             [1,2,3],   
             [[0.2,0.4,0.4],[0.5,0.4,0.1]])
-            
+
+          
 
 ej2_hmm=HMM(["l","no l"],
             [0.5,0.5],
@@ -120,10 +121,27 @@ ej2_hmm=HMM(["l","no l"],
 # calcule la lista: [s_1, ..., s_t] con la sucesión de estados más
 # probables usando adecuadamente el algoritmo de Viterbi.
 
+def arg_max(dic):
+    maximo = float("-infinity")
+    for (x,v) in dic.items():
+        if v > maximo:
+            maximo = v
+            estado = x
+    return estado
+
+def viterbi(hmm,observaciones):
+    nu_list=[hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
+    pr_list = []
+    for o in observaciones[1:]:
+        pr = arg_max({e:nu*hmm.a[(e,e1)] for nu,e1 in zip(nu_list,hmm.estados) for e in hmm.estados})
+        pr2 = arg_max({e:nu*hmm.a[(e,e1)] for nu,e in zip(nu_list,hmm.estados) for e1 in hmm.estados})
+        nu_list=[hmm.b[(e,o)]*max(hmm.a[(e1,e)]*nu for (e1,nu) in zip(hmm.estados,nu_list)) 
+        for e in hmm.estados]
+
 # Ejemplos:
 
 
-# >>> viterbi(ej1_hmm,[3,1,3,2])
+viterbi(ej1_hmm,[3,1,3,2])
 # ['c', 'c', 'c', 'c']
 
 # >>> viterbi(ej2_hmm,["u","u","no u"])
@@ -147,13 +165,6 @@ def viterbi_pre(hmm,observaciones):
         return nu_list
 
 print(viterbi_pre(ej1_hmm,[3,1,3,2]))
-
-
-
-
-
-
-
 
 # ========================================================
 # Ejercicio 2
@@ -202,10 +213,29 @@ print(viterbi_pre(ej1_hmm,[3,1,3,2]))
 # observación sería 1. En resumen, hemos generado la secuencia de estados
 # [c,f,f] con la correspondiente secuencia de observaciones [2,1,1].
 
+def cal_e(dic):
+    n_random = random.random()
+    dif_min = float("infinity")
+    for (x,v) in dic.items():
+        dif = abs((n_random - v))
+        if dif < dif_min:
+            dif_min = dif
+            estado = x
+    return estado
+
+def cal_o(v_):
+    n_random = random.random()
+
+def muestreo_hmm(hmm,n):
+    sec_estados = []
+    sec_observaciones = []
+    sec_estados.append(cal_e(hmm.pi))    
+    sec_observaciones.append(cal_o(hmm.b))
+
 # Ejemplos (téngase en cuenta que la salida está sujeta a aleatoriedad):
 
 
-# >>> muestreo_hmm(ej1_hmm,10)  
+muestreo_hmm(ej1_hmm,10)  
 # [['c', 'c', 'f', 'f', 'c', 'c', 'c', 'c', 'c', 'c'],
 #  [2, 1, 1, 1, 3, 2, 1, 2, 3, 1]]
 
