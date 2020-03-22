@@ -85,9 +85,7 @@ ej2_hmm=HMM(["l","no l"],
             ["u","no u"],   
             [[0.9,0.1],[0.2,0.8]])
 
-
-
-
+print(ej1_hmm.b[('c',ej1_hmm.observables[0])])
 
 # ========================================================
 # Ejercicio 1
@@ -146,18 +144,6 @@ def arg_max_nu(nu_list, pr_list,estados):
         secuencia.append(estados[1])
     return secuencia
 
-    '''
-    list_estados = []
-    if nu_list[0][0] > nu_list[0][1]:
-        list_estados.append(estados[0])
-    else:
-        list_estados.append(estados[1])
-    for nu in range(1,len(nu_list)):
-        if nu_list[nu][0] > nu_list[nu][1]:
-            list_estados.append(pr_list[nu-1][0])
-        else:
-            list_estados.append(pr_list[nu-1][1])
-    '''
 
 def viterbi(hmm,observaciones):
     nu_list = [hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
@@ -202,7 +188,6 @@ def viterbi_pre(hmm,observaciones):
             for e in hmm.estados]
         return nu_list
 
-print(viterbi_pre(ej1_hmm,[3,1,3,2]))
 
 # ========================================================
 # Ejercicio 2
@@ -261,32 +246,42 @@ def cal_e(dic):
             estado = x
     return estado
 
-def cal_o(v_):
+def cal_o(hmm,estados):
+    observables = hmm.observables
     n_random = random.random()
+    prob = 0
+    for i in range(0,len(observables)):
+        prob += hmm.b[(estados,observables[i])]
+        if prob >= n_random:
+            observable = observables[i]
+            break
+    return observable
 
 def muestreo_hmm(hmm,n):
     sec_estados = []
     sec_observaciones = []
-    sec_estados.append(cal_e(hmm.pi))    
-    sec_observaciones.append(cal_o(hmm.b))
+    for i in range(n):
+        sec_estados.append(cal_e(hmm.pi))    
+        sec_observaciones.append(cal_o(hmm,sec_estados[-1]))
+    return [sec_estados,sec_observaciones]
 
 # Ejemplos (téngase en cuenta que la salida está sujeta a aleatoriedad):
 
 
-muestreo_hmm(ej1_hmm,10)  
+print(muestreo_hmm(ej1_hmm,10))
 # [['c', 'c', 'f', 'f', 'c', 'c', 'c', 'c', 'c', 'c'],
 #  [2, 1, 1, 1, 3, 2, 1, 2, 3, 1]]
 
-# >>> muestreo_hmm(ej1_hmm,10) 
+print(muestreo_hmm(ej1_hmm,10))
 # [['c', 'c', 'f', 'f', 'f', 'f', 'c', 'c', 'c', 'c'],
 #  [1, 1, 1, 1, 3, 1, 2, 3, 2, 3]]
 
 
-# >>> muestreo_hmm(ej2_hmm,7)
+print(muestreo_hmm(ej2_hmm,7))
 # [['l', 'l', 'l', 'l', 'no l', 'l', 'l'],
 #  ['u', 'u', 'u', 'u', 'no u', 'u', 'u']]
 
-# >>> muestreo_hmm(ej2_hmm,7) 
+print(muestreo_hmm(ej2_hmm,7))
 # [['no l', 'no l', 'no l', 'no l', 'no l', 'no l', 'l'],
 #  ['no u', 'no u', 'u', 'no u', 'no u', 'no u', 'u']]
 

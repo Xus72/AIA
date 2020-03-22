@@ -238,19 +238,6 @@ def arg_max_nu(nu_list, pr_list,estados):
         secuencia.append(estados[1])
     return secuencia
 
-    '''
-    list_estados = []
-    if nu_list[0][0] > nu_list[0][1]:
-        list_estados.append(estados[0])
-    else:
-        list_estados.append(estados[1])
-    for nu in range(1,len(nu_list)):
-        if nu_list[nu][0] > nu_list[nu][1]:
-            list_estados.append(pr_list[nu-1][0])
-        else:
-            list_estados.append(pr_list[nu-1][1])
-    '''
-
 def viterbi(hmm,observaciones):
     nu_list = [hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
     nu_list_list = [nu_list]
