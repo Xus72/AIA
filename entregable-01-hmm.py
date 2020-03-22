@@ -121,22 +121,60 @@ ej2_hmm=HMM(["l","no l"],
 # calcule la lista: [s_1, ..., s_t] con la sucesión de estados más
 # probables usando adecuadamente el algoritmo de Viterbi.
 
-def arg_max(dic):
-    maximo = float("-infinity")
-    for (x,v) in dic.items():
-        if v > maximo:
-            maximo = v
-            estado = x
-    return estado
+def arg_max(list,estados):
+    list_estados = []
+    if list[0][0] > list[0][1]:
+        list_estados.append(estados[0])
+    else:
+        list_estados.append(estados[1])
+    if list[1][0] > list[1][1]:
+        list_estados.append(estados[0])
+    else: 
+        list_estados.append(estados[1])
+    return list_estados
+
+def arg_max_nu(nu_list, pr_list,estados):
+    secuencia = []
+    for i in range(1,len(nu_list)):
+        if nu_list[i][0] > nu_list[i][1]:
+            secuencia.append(pr_list[i-1][0])
+        else:
+            secuencia.append(pr_list[i-1][1])
+    if nu_list[-1][0] > nu_list[-1][1]:
+        secuencia.append(estados[0])
+    else:
+        secuencia.append(estados[1])
+    return secuencia
+
+    '''
+    list_estados = []
+    if nu_list[0][0] > nu_list[0][1]:
+        list_estados.append(estados[0])
+    else:
+        list_estados.append(estados[1])
+    for nu in range(1,len(nu_list)):
+        if nu_list[nu][0] > nu_list[nu][1]:
+            list_estados.append(pr_list[nu-1][0])
+        else:
+            list_estados.append(pr_list[nu-1][1])
+    '''
 
 def viterbi(hmm,observaciones):
-    nu_list=[hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
+    nu_list = [hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
+    nu_list_list = [nu_list]
     pr_list = []
     for o in observaciones[1:]:
-        pr = arg_max({e:nu*hmm.a[(e,e1)] for nu,e1 in zip(nu_list,hmm.estados) for e in hmm.estados})
-        pr2 = arg_max({e:nu*hmm.a[(e,e1)] for nu,e in zip(nu_list,hmm.estados) for e1 in hmm.estados})
-        nu_list=[hmm.b[(e,o)]*max(hmm.a[(e1,e)]*nu for (e1,nu) in zip(hmm.estados,nu_list)) 
-        for e in hmm.estados]
+        pr = [[nu*hmm.a[(e1,e)] for (e1,nu) in zip(hmm.estados,nu_list)] for e in hmm.estados]
+        pr_list.append(arg_max(pr,hmm.estados))
+        #pr_list = [item for l in pr_list for item in l]
+        nu_list = [hmm.b[(e,o)] * max(nu * hmm.a[(e1,e)] for (nu,e1) in zip(nu_list,hmm.estados)) for e in hmm.estados]
+        nu_list_list.append(nu_list)
+    s = arg_max_nu(nu_list_list,pr_list,hmm.estados)
+    return s
+
+
+print(viterbi(ej1_hmm,[3,1,3,2]))
+print(viterbi(ej2_hmm,["u","u","no u"]))
 
 # Ejemplos:
 
