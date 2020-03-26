@@ -41,7 +41,7 @@
 # hasta el momento.
 # *****************************************************************************
 
-import random
+import random, math
 
 # Lo que sigue es la implementación de la clase HMM vista en la práctica 2,
 # que representa de manera genérica un modelo oculto de Markov.
@@ -158,7 +158,6 @@ def viterbi(hmm,observaciones):
     s = arg_max_nu(nu_list_list,pr_list,hmm.estados)
     return s
 
-
 print(viterbi(ej1_hmm,[3,1,3,2]))
 print(viterbi(ej2_hmm,["u","u","no u"]))
 
@@ -246,24 +245,40 @@ def cal_e(dic):
             estado = x
     return estado
 
-def cal_o(hmm,estados):
+def cal_o(hmm,estado):
     observables = hmm.observables
     n_random = random.random()
     prob = 0
     for i in range(0,len(observables)):
-        prob += hmm.b[(estados,observables[i])]
+        prob += hmm.b[(estado,observables[i])]
         if prob >= n_random:
             observable = observables[i]
             break
     return observable
 
+def estado_siguiente(hmm,estado):
+    n_random = random.random()
+    estados = hmm.estados
+    prob = 0
+    for i in range(0,len(estados)):
+        prob += hmm.a[(estado,estados[i])]
+        if prob >= n_random:
+            sig_estado = estados[i]
+            break
+    return sig_estado
+
 def muestreo_hmm(hmm,n):
     sec_estados = []
     sec_observaciones = []
     for i in range(n):
-        sec_estados.append(cal_e(hmm.pi))    
-        sec_observaciones.append(cal_o(hmm,sec_estados[-1]))
+        if i == 0:
+            sec_estados.append(cal_e(hmm.pi))    
+        else:
+            sec_estados.append(estado_siguiente(hmm,sec_estados[-1]))
+            sec_observaciones.append(cal_o(hmm,sec_estados[-1]))
     return [sec_estados,sec_observaciones]
+
+
 
 # Ejemplos (téngase en cuenta que la salida está sujeta a aleatoriedad):
 
@@ -284,16 +299,6 @@ print(muestreo_hmm(ej2_hmm,7))
 print(muestreo_hmm(ej2_hmm,7))
 # [['no l', 'no l', 'no l', 'no l', 'no l', 'no l', 'l'],
 #  ['no u', 'no u', 'u', 'no u', 'no u', 'no u', 'u']]
-
-
-
-
-
-
-
-
-
-
 
 
 # ========================================================
@@ -386,30 +391,46 @@ print(muestreo_hmm(ej2_hmm,7))
 #   y (0,0,1,0) indica que se detecta obstáculo solo en el E.    
 # - Por simplificar, supondremos que no hay casillas aisladas. 
 
+class Robot(HMM):
+    def __init__(self,estados,error):
+#lambda x: True if x % 2 == 0 else False
 
+        def distancia(x1,y1,x2,y2):
+            if math.sqrt((x2-x1)**2 + (y2-y1)**2) == 1:
+                return (1/2)
+            else:
+                return 0
+
+        self.estados = [(i,j) for i in range(0,len(estados)) for j in range(0,len(estados[i]))]
+        self.observables = [(i1,i2,i3,i4) for i1 in range(0,2) for i2 in range(0,2) for i3 in range(0,2) for i4 in range(0,2)]
+        self.pi = {(i,j):(1/(len(self.estados)-1)) for i in range(0,len(estados)) for j in range(0,len(estados[i]))} 
+        self.a = {((i1,j1),(i2,j2)):(distancia(i1,j1,i2,j2)) for i1 in range(0,len(estados)) for j1 in range(0,len(estados)) 
+                                        for i2 in range(0,len(estados)) for j2 in range(0,len(estados))} #Falta mirar los vecinos
+        self.b = {}
 # Ejemplo de HMM generado para una cuadrícula básica:
     
 cuadr0=["ooo",
         "oxo",
         "ooo"]
 
-# >>> robot0=Robot(cuadr0,0.1)
+robot0=Robot(cuadr0,0.1)
 
-# >>> robot0.estados
+print(robot0.estados)
 # [(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]
 
-# >>> robot0.observables
+print(robot0.observables)
 
 #[(0, 0, 0, 0),(0, 0, 0, 1),(0, 0, 1, 0),(0, 0, 1, 1),(0, 1, 0, 0),
 # (0, 1, 0, 1),(0, 1, 1, 0),(0, 1, 1, 1),(1, 0, 0, 0),(1, 0, 0, 1),
 # (1, 0, 1, 0),(1, 0, 1, 1),(1, 1, 0, 0),(1, 1, 0, 1),(1, 1, 1, 0),
 # (1, 1, 1, 1)]
 
-# >>> robot0.pi 
+print(robot0.pi)
 # {(0, 0): 0.125, (0, 1): 0.125, (0, 2): 0.125, (1, 0): 0.125,
 #  (1, 2): 0.125, (2, 0): 0.125, (2, 1): 0.125, (2, 2): 0.125}
 
-# >>> robot0.a
+
+print(robot0.a)
  
 #{((0, 0), (0, 0)): 0, ((0, 0), (0, 1)): 0.5, ((0, 0), (0, 2)): 0,
 # ((0, 0), (1, 0)): 0.5,((0, 0), (1, 2)): 0, ((0, 0), (2, 0)): 0,
@@ -438,7 +459,7 @@ cuadr_rn=     ["ooooxoooooxoooxo",
                "xoooxoxxoooooxxo",
                "ooxoooxooooxoooo"]
 
-#obot_rn=Robot(cuadr_rn,0.15)
+robot_rn=Robot(cuadr_rn,0.15)
 
 # Secuencia de 7 observaciones:
 seq_rn1=[(1, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 1), (0, 1, 0, 1),
@@ -446,7 +467,7 @@ seq_rn1=[(1, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 1), (0, 1, 0, 1),
 
 # Usando Viterbi, estimamos las casillas por las que ha pasado:
 
-# >>> viterbi(robot_rn,seq_rn1)
+viterbi(robot_rn,seq_rn1)
 # [(3, 14), (3, 13), (3, 12), (3, 13), (3, 14), (3, 15), (3, 14)]
 
 
