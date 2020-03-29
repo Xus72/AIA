@@ -393,20 +393,86 @@ print(muestreo_hmm(ej2_hmm,7))
 
 class Robot(HMM):
     def __init__(self,estados,error):
-#lambda x: True if x % 2 == 0 else False
+        
+        def parser_estado(estados):
+            estado = []
+            for i in range(len(estados)):
+                for j in range(len(estados[i])):
+                    if estados[i][j] == "o":
+                        estado.append((i,j))
+            return estado
+        
+        def cal_a(estados):
+            dict_estados = {}
+            for si in estados:
+                for sj in estados:
+                    if abs((sj[1]-si[1])+(sj[0]-si[0])) == 1:
+                        dict_estados[si,sj] = 0.5
+                    else:
+                        dict_estados[si,sj] = 0
+            return dict_estados
 
-        def distancia(x1,y1,x2,y2):
-            if math.sqrt((x2-x1)**2 + (y2-y1)**2) == 1:
-                return (1/2)
+        def vecinos(e,estados):
+            list_vecinos = []
+            for sj in self.estados:
+                if abs((sj[1]-e[1])+(sj[0]-e[0])) == 1:
+                    list_vecinos.append(sj)
+            return list_vecinos
+
+        def prob(e,observacion):
+            aciertos = 0
+            fallos = 0
+            epsilon_error = 0
+            list_vecino = vecinos(e,self.estados)
+            if (e[0]-1,e[1]) in list_vecino:
+                if observacion[0] == 0:
+                    aciertos += 1
+                else:
+                    fallos += 1
             else:
-                return 0
+                if observacion[0] == 1:
+                    aciertos += 1
+                else:
+                    fallos += 1
+            if (e[0]+1,e[1]) in list_vecino:
+                if observacion[1] == 0:
+                    aciertos += 1
+                else:
+                    fallos += 1
+            else:
+                if observacion[1] == 1:
+                    aciertos += 1
+                else:
+                    fallos += 1
+            if (e[0],e[1]+1) in list_vecino:
+                if observacion[2] == 0:
+                    aciertos += 1
+                else:
+                    fallos += 1
+            else:
+                if observacion[2] == 1:
+                    aciertos += 1
+                else:
+                    fallos += 1
+            if (e[0],e[1]-1) in list_vecino:
+                if observacion[3] == 0:
+                    aciertos += 1
+                else:
+                    fallos += 1
+            else:
+                if observacion[3] == 1:
+                    aciertos += 1
+                else:
+                    fallos += 1
+            epsilon_error = (error)^fallos + (1-error)^aciertos
+            sum = 0
+            return epsilon_error
 
-        self.estados = [(i,j) for i in range(0,len(estados)) for j in range(0,len(estados[i]))]
+        self.estados = parser_estado(estados)
         self.observables = [(i1,i2,i3,i4) for i1 in range(0,2) for i2 in range(0,2) for i3 in range(0,2) for i4 in range(0,2)]
-        self.pi = {(i,j):(1/(len(self.estados)-1)) for i in range(0,len(estados)) for j in range(0,len(estados[i]))} 
-        self.a = {((i1,j1),(i2,j2)):(distancia(i1,j1,i2,j2)) for i1 in range(0,len(estados)) for j1 in range(0,len(estados)) 
-                                        for i2 in range(0,len(estados)) for j2 in range(0,len(estados))} #Falta mirar los vecinos
-        self.b = {}
+        self.pi = {(i,j):(1/(len(self.estados))) for i in range(0,len(estados)) for j in range(0,len(estados[i]))} 
+        self.a = {(si,sj):cal_a(self.estados) for si in self.estados for sj in self.estados}
+        self.b = {(si,vj):prob(si,vj) for (si,vj) in zip(self.estados,self.observables)}
 # Ejemplo de HMM generado para una cuadrícula básica:
     
 cuadr0=["ooo",
@@ -414,24 +480,27 @@ cuadr0=["ooo",
         "ooo"]
 
 robot0=Robot(cuadr0,0.1)
-
+print("\n")
+print("Estados")
 print(robot0.estados)
 # [(0, 0), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1), (2, 2)]
-
+print("\n")
+print("Observables")
 print(robot0.observables)
-
+print("\n")
 #[(0, 0, 0, 0),(0, 0, 0, 1),(0, 0, 1, 0),(0, 0, 1, 1),(0, 1, 0, 0),
 # (0, 1, 0, 1),(0, 1, 1, 0),(0, 1, 1, 1),(1, 0, 0, 0),(1, 0, 0, 1),
 # (1, 0, 1, 0),(1, 0, 1, 1),(1, 1, 0, 0),(1, 1, 0, 1),(1, 1, 1, 0),
 # (1, 1, 1, 1)]
-
+print("Probabilidades iniciales")
 print(robot0.pi)
+print("\n")
 # {(0, 0): 0.125, (0, 1): 0.125, (0, 2): 0.125, (1, 0): 0.125,
 #  (1, 2): 0.125, (2, 0): 0.125, (2, 1): 0.125, (2, 2): 0.125}
 
-
+print("Matriz de transición")
 print(robot0.a)
- 
+print("\n")
 #{((0, 0), (0, 0)): 0, ((0, 0), (0, 1)): 0.5, ((0, 0), (0, 2)): 0,
 # ((0, 0), (1, 0)): 0.5,((0, 0), (1, 2)): 0, ((0, 0), (2, 0)): 0,
 # ((0, 0), (2, 1)): 0, ((0, 0), (2, 2)): 0,
@@ -441,7 +510,8 @@ print(robot0.a)
 # ((0, 2), (0, 0)): 0, ((0, 2), (0, 1)): 0.5,
 # ... Continúa .....
 
-# >>> robot0.b
+print("Matriz de observaciones")
+print(robot0.b)
 #{((0, 0), (0, 0, 0, 0)): 0.008100000000000001,
 # ((0, 0), (0, 0, 0, 1)): 0.07290000000000002,
 # ((0, 0), (0, 0, 1, 0)): 0.0009000000000000002,
@@ -467,7 +537,7 @@ seq_rn1=[(1, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 1), (0, 1, 0, 1),
 
 # Usando Viterbi, estimamos las casillas por las que ha pasado:
 
-viterbi(robot_rn,seq_rn1)
+#viterbi(robot_rn,seq_rn1)
 # [(3, 14), (3, 13), (3, 12), (3, 13), (3, 14), (3, 15), (3, 14)]
 
 
