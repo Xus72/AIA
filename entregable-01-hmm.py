@@ -121,14 +121,11 @@ print(ej1_hmm.b[('c',ej1_hmm.observables[0])])
 
 def arg_max(list,estados):
     list_estados = []
-    if list[0][0] > list[0][1]:
-        list_estados.append(estados[0])
-    else:
-        list_estados.append(estados[1])
-    if list[1][0] > list[1][1]:
-        list_estados.append(estados[0])
-    else: 
-        list_estados.append(estados[1])
+    for i in range(len(list)): 
+        if list[i][0] > list[i][1]:
+            list_estados.append(estados[0])
+        else:
+            list_estados.append(estados[1])
     return list_estados
 
 def arg_max_nu(nu_list, pr_list,estados):
@@ -451,7 +448,7 @@ class Robot(HMM):
                     fallos += 1
             else:
                 if observacion[2] == 1:
-                    aciertos += 1
+                    aciertos += 1   
                 else:
                     fallos += 1
             if (e[0],e[1]-1) in list_vecino:
@@ -464,15 +461,14 @@ class Robot(HMM):
                     aciertos += 1
                 else:
                     fallos += 1
-            epsilon_error = (error)^fallos + (1-error)^aciertos
-            sum = 0
+            epsilon_error = (1-error)**aciertos * (error)**fallos
             return epsilon_error
 
         self.estados = parser_estado(estados)
         self.observables = [(i1,i2,i3,i4) for i1 in range(0,2) for i2 in range(0,2) for i3 in range(0,2) for i4 in range(0,2)]
         self.pi = {(i,j):(1/(len(self.estados))) for i in range(0,len(estados)) for j in range(0,len(estados[i]))} 
         self.a = {(si,sj):cal_a(self.estados) for si in self.estados for sj in self.estados}
-        self.b = {(si,vj):prob(si,vj) for (si,vj) in zip(self.estados,self.observables)}
+        self.b = {(si,vj):prob(si,vj) for si in self.estados for vj in self.observables}
 # Ejemplo de HMM generado para una cuadrícula básica:
     
 cuadr0=["ooo",
@@ -537,7 +533,8 @@ seq_rn1=[(1, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 1), (0, 1, 0, 1),
 
 # Usando Viterbi, estimamos las casillas por las que ha pasado:
 
-#viterbi(robot_rn,seq_rn1)
+print(robot_rn.a)
+#print(viterbi(robot_rn,seq_rn1))
 # [(3, 14), (3, 13), (3, 12), (3, 13), (3, 14), (3, 15), (3, 14)]
 
 
