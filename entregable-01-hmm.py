@@ -41,7 +41,8 @@
 # hasta el momento.
 # *****************************************************************************
 
-import random, math
+import random
+import numpy as np
 
 # Lo que sigue es la implementación de la clase HMM vista en la práctica 2,
 # que representa de manera genérica un modelo oculto de Markov.
@@ -119,40 +120,26 @@ print(ej1_hmm.b[('c',ej1_hmm.observables[0])])
 # calcule la lista: [s_1, ..., s_t] con la sucesión de estados más
 # probables usando adecuadamente el algoritmo de Viterbi.
 
-def arg_max(list,estados):
-    list_estados = []
-    for i in range(len(list)): 
-        if list[i][0] > list[i][1]:
-            list_estados.append(estados[0])
-        else:
-            list_estados.append(estados[1])
-    return list_estados
-
-def arg_max_nu(nu_list, pr_list,estados):
-    secuencia = []
-    for i in range(1,len(nu_list)):
-        if nu_list[i][0] > nu_list[i][1]:
-            secuencia.append(pr_list[i-1][0])
-        else:
-            secuencia.append(pr_list[i-1][1])
-    if nu_list[-1][0] > nu_list[-1][1]:
-        secuencia.append(estados[0])
-    else:
-        secuencia.append(estados[1])
-    return secuencia
-
-
 def viterbi(hmm,observaciones):
-    nu_list = [hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
-    nu_list_list = [nu_list]
-    pr_list = []
-    for o in observaciones[1:]:
-        pr = [[nu*hmm.a[(e1,e)] for (e1,nu) in zip(hmm.estados,nu_list)] for e in hmm.estados]
-        pr_list.append(arg_max(pr,hmm.estados))
-        #pr_list = [item for l in pr_list for item in l]
-        nu_list = [hmm.b[(e,o)] * max(nu * hmm.a[(e1,e)] for (nu,e1) in zip(nu_list,hmm.estados)) for e in hmm.estados]
-        nu_list_list.append(nu_list)
-    s = arg_max_nu(nu_list_list,pr_list,hmm.estados)
+    pr = list()
+    nu_dic = {e: [0 for _ in range(len(observaciones))] for e in hmm.estados}
+    pr_dic = {e: [0 for _ in range(len(observaciones))] for e in hmm.estados}
+    for e in hmm.estados:
+        nu_dic[e][0] = hmm.b[e,observaciones[0]] * hmm.pi[e]
+    for k,o in zip(range(1,len(observaciones)),observaciones[1:]):
+        for e in hmm.estados:
+            nu_dic[e][k] = hmm.b[(e,o)] * max(hmm.a[(e1,e)]*nu_dic[e1][k-1] for e1 in hmm.estados)
+            pr = [hmm.a[(e1,e)]*nu_dic[e1][k-1] for e1 in hmm.estados]
+            indice = pr.index(max(pr))
+            pr_dic[e][k] = hmm.estados[indice]
+    nu = [nu_dic[k][-1] for k in hmm.estados]
+    ind_nu = nu.index(max(nu))
+    nu_e = hmm.estados[ind_nu]
+    s = [nu_e]
+    for i in range(len(observaciones)-1,0,-1):
+        estado_ant = pr_dic[nu_e][i]
+        s.insert(0,estado_ant)
+        nu_e = estado_ant
     return s
 
 print(viterbi(ej1_hmm,[3,1,3,2]))
@@ -161,7 +148,7 @@ print(viterbi(ej2_hmm,["u","u","no u"]))
 # Ejemplos:
 
 
-viterbi(ej1_hmm,[3,1,3,2])
+#viterbi(ej1_hmm,[3,1,3,2])
 # ['c', 'c', 'c', 'c']
 
 # >>> viterbi(ej2_hmm,["u","u","no u"])
@@ -175,14 +162,14 @@ viterbi(ej1_hmm,[3,1,3,2])
 # incluir la "infraestructura" necesaria y poder obtener la secuencia de
 # estados más probable.
 
-def viterbi_pre(hmm,observaciones):
+'''def viterbi_pre(hmm,observaciones):
         """Versión pre-Viterbi que calcula los nu_k"""
         nu_list=[hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
         for o in observaciones[1:]:
 
             nu_list=[hmm.b[(e,o)]*max(hmm.a[(e1,e)]*nu for (e1,nu) in zip(hmm.estados,nu_list)) 
             for e in hmm.estados]
-        return nu_list
+        return nu_list'''
 
 
 # ========================================================
@@ -257,6 +244,7 @@ def estado_siguiente(hmm,estado):
     n_random = random.random()
     estados = hmm.estados
     prob = 0
+    sig_estado = 0
     for i in range(0,len(estados)):
         prob += hmm.a[(estado,estados[i])]
         if prob >= n_random:
@@ -388,7 +376,133 @@ print(muestreo_hmm(ej2_hmm,7))
 #   y (0,0,1,0) indica que se detecta obstáculo solo en el E.    
 # - Por simplificar, supondremos que no hay casillas aisladas. 
 
+'''
+def multiplica_lista(lista):
+    x = 1
+    for i in lista:
+        x = x * i
+    return x
+ 
+ 
+def listatablero(estado1, tablero):
+    # Compruebo en que parte del tablero esta, y dependiendo de donde este, miro unos puntos
+    # y pongo a cero a los que no se puede ir.
+    # En lista_tablero guardo que hay al norte, sur, este y oeste.
+    lista_tablero = []
+    # Filas Columnas
+    if estado1[0] == 0 and estado1[1] == 0:  # Si esta en la esquina superior izq
+        lista_tablero = [0,  # Norte
+                         tablero[estado1[0] + 1][estado1[1]],  # Sur
+                         tablero[estado1[0]][estado1[1] + 1],  # Este
+                         0]  # Oeste
+ 
+    elif estado1[0] == 0 and estado1[1] == len(tablero[0]) - 1:  # Si esta en la esquina superior dcha
+        lista_tablero = [0,  # Norte
+                         tablero[estado1[0] + 1][estado1[1]],  # Sur
+                         0,  # Este
+                         tablero[estado1[0]][estado1[1] - 1]]  # Oeste
+ 
+    elif estado1[0] == len(tablero) - 1 and estado1[1] == 0:  # Si esta en la esquina inferior izq
+        lista_tablero = [tablero[estado1[0] - 1][estado1[1]],  # Norte
+                         0,  # Sur
+                         tablero[estado1[0]][estado1[1] + 1],  # Este
+                         0]  # Oeste
+ 
+    elif estado1[0] == len(tablero) - 1 and estado1[1] == len(
+            tablero[0]) - 1:  # Si esta en la esquina inferior dcha
+        lista_tablero = [tablero[estado1[0] - 1][estado1[1]],  # Norte
+                         0,  # Sur
+                         0,  # Este
+                         tablero[estado1[0]][estado1[1] - 1]]  # Oeste
+ 
+    elif estado1[0] == 0:  # Si esta en la primera linea
+        lista_tablero = [0,  # Norte
+                         tablero[estado1[0] + 1][estado1[1]],  # Sur
+                         tablero[estado1[0]][estado1[1] + 1],  # Este
+                         tablero[estado1[0]][estado1[1] - 1]]  # Oeste
+ 
+    elif estado1[0] == len(tablero) - 1:  # Si esta en la ultima linea
+        lista_tablero = [tablero[estado1[0] - 1][estado1[1]],  # Norte
+                         0,  # Sur
+                         tablero[estado1[0]][estado1[1] + 1],  # Este
+                         tablero[estado1[0]][estado1[1] - 1]]  # Oeste
+ 
+    elif estado1[1] == 0:  # Si esta en la primera columna
+        lista_tablero = [tablero[estado1[0] - 1][estado1[1]],  # Norte
+                         tablero[estado1[0] + 1][estado1[1]],  # Sur
+                         tablero[estado1[0]][estado1[1] + 1],  # Este
+                         0]  # Oeste
+ 
+    elif estado1[1] == len(tablero[0]) - 1:  # Si esta en la ultima columna
+        lista_tablero = [tablero[estado1[0] - 1][estado1[1]],  # Norte
+                         tablero[estado1[0] + 1][estado1[1]],  # Sur
+                         0,  # Este
+                         tablero[estado1[0]][estado1[1] - 1]]  # Oeste
+ 
+    else:  # Si esta por el medio
+        lista_tablero = [tablero[estado1[0] - 1][estado1[1]],  # Norte
+                         tablero[estado1[0] + 1][estado1[1]],  # Sur
+                         tablero[estado1[0]][estado1[1] + 1],  # Este
+                         tablero[estado1[0]][estado1[1] - 1]]  # Oeste
+ 
+    return lista_tablero
+ 
+ 
 class Robot(HMM):
+ 
+    def __init__(self, tablero, error):
+        self.estados = [(i, j) for i in range(len(tablero)) for j in range(len(tablero[0]))
+                        if tablero[i][j] != "x"]
+        x = [0, 1]
+        self.observables = [(i, j, k, l) for i in x for j in x for k in x for l in x]
+ 
+        # Funcion para saber cuantos vecinos tiene un estado
+        def vecinos(estado11):
+            cont = 0
+            for estado in self.estados:
+                if (abs(estado11[0] - estado[0]) == 1 and abs(estado11[1] - estado[1]) == 0
+                        or abs(estado11[0] - estado[0]) == 0 and abs(estado11[1] - estado[1]) == 1):
+                    cont += 1
+            return cont
+ 
+        # Solo pongo probabilidad a los que estan contiguos
+        self.a = {(estado1, estado2): (1 / vecinos(estado1)) if (abs(estado1[0] - estado2[0]) == 1 and abs(
+            estado1[1] - estado2[1]) == 0)
+                                                                or (abs(estado1[0] - estado2[0]) == 0 and abs(
+            estado1[1] - estado2[1]) == 1)
+        else 0
+                  for estado1 in self.estados for estado2 in self.estados}
+ 
+        self.pi = {clave: 1 / len(self.estados) for clave in self.estados}
+        self.b = {}
+        for estado1 in self.estados:
+ 
+            lista_tablero = listatablero(estado1, tablero)
+ 
+            # Paso la lista del tablero a una lista de ceros y unos para comparar con las observaciones
+            lista_0_1 = [1 if x == "o" else 0 for x in lista_tablero]
+ 
+            # Miramos cada observacion
+            for observacion in self.observables:
+ 
+                # Lista donde guardamos los errores de la observacion
+                lista_errores = []
+ 
+                # Miramos cada elemento de la observacion, y lo comparamos con lo que dice el robot
+                for n in range(len(observacion)):
+ 
+                    # Por cada elemento en el que se equivoque multiplicamos por el error
+                    if lista_0_1[n] != observacion[n]:
+                        lista_errores.append(1 - error)
+ 
+                    # Por cada elemento que este bien, multiplicamos por 1-error
+                    else:
+                        lista_errores.append(error)
+                # Metemos en la matriz b la lista multiplicada con su clave
+                self.b[(estado1, observacion)] = multiplica_lista(lista_errores)
+'''
+class Robot(HMM):
+
     def __init__(self,estados,error):
         
         def parser_estado(estados):
@@ -398,77 +512,78 @@ class Robot(HMM):
                     if estados[i][j] == "o":
                         estado.append((i,j))
             return estado
-        
-        def cal_a(estados):
-            dict_estados = {}
-            for si in estados:
-                for sj in estados:
-                    if abs((sj[1]-si[1])+(sj[0]-si[0])) == 1:
-                        dict_estados[si,sj] = 0.5
-                    else:
-                        dict_estados[si,sj] = 0
-            return dict_estados
+        def cal_a(e,e1):
+            n_vecinos = 0
+            if (abs(e1[0] - e[0]) == 1 and abs(e1[1] - e[1]) == 0
+                    or abs(e1[0] - e[0]) == 0 and abs(e1[1] - e[1]) == 1): 
+                n_vecinos = len(vecinos(e))
+            if n_vecinos != 0:
+                return (1/n_vecinos)
+            return 0
 
-        def vecinos(e,estados):
-            list_vecinos = []
-            for sj in self.estados:
-                if abs((sj[1]-e[1])+(sj[0]-e[0])) == 1:
-                    list_vecinos.append(sj)
-            return list_vecinos
+        def vecinos(e):
+            lista_vecinos = []
+            for e1 in self.estados:
+                if (abs(e1[0] - e[0]) == 1 and abs(e1[1] - e[1]) == 0
+                    or abs(e1[0] - e[0]) == 0 and abs(e1[1] - e[1]) == 1): 
+                        lista_vecinos.append(e1)        
+            return lista_vecinos
 
         def prob(e,observacion):
-            aciertos = 0
-            fallos = 0
-            epsilon_error = 0
-            list_vecino = vecinos(e,self.estados)
+            epsilon_error = 1
+            errores = []
+            list_vecino = vecinos(e)
             if (e[0]-1,e[1]) in list_vecino:
                 if observacion[0] == 0:
-                    aciertos += 1
+                    errores.append(1-error)
                 else:
-                    fallos += 1
+                    errores.append(error)
             else:
                 if observacion[0] == 1:
-                    aciertos += 1
+                    errores.append(1-error)
                 else:
-                    fallos += 1
+                    errores.append(error)
             if (e[0]+1,e[1]) in list_vecino:
                 if observacion[1] == 0:
-                    aciertos += 1
+                    errores.append(1-error)
                 else:
-                    fallos += 1
+                    errores.append(error)
             else:
                 if observacion[1] == 1:
-                    aciertos += 1
+                    errores.append(1-error)
                 else:
-                    fallos += 1
+                    errores.append(error)
             if (e[0],e[1]+1) in list_vecino:
                 if observacion[2] == 0:
-                    aciertos += 1
+                    errores.append(1-error)
                 else:
-                    fallos += 1
+                    errores.append(error)
             else:
                 if observacion[2] == 1:
-                    aciertos += 1   
+                    errores.append(1-error)   
                 else:
-                    fallos += 1
+                    errores.append(error)
             if (e[0],e[1]-1) in list_vecino:
                 if observacion[3] == 0:
-                    aciertos += 1
+                    errores.append(1-error)
                 else:
-                    fallos += 1
+                    errores.append(error)
             else:
                 if observacion[3] == 1:
-                    aciertos += 1
+                    errores.append(1-error)
                 else:
-                    fallos += 1
-            epsilon_error = (1-error)**aciertos * (error)**fallos
+                    errores.append(error)
+            for i in errores:
+                epsilon_error *= i
             return epsilon_error
-
+        
         self.estados = parser_estado(estados)
         self.observables = [(i1,i2,i3,i4) for i1 in range(0,2) for i2 in range(0,2) for i3 in range(0,2) for i4 in range(0,2)]
-        self.pi = {(i,j):(1/(len(self.estados))) for i in range(0,len(estados)) for j in range(0,len(estados[i]))} 
-        self.a = {(si,sj):cal_a(self.estados) for si in self.estados for sj in self.estados}
+        self.pi = {(estado):(1/(len(self.estados))) for estado in self.estados} 
+        self.a = {(e,e1): cal_a(e,e1) for e in self.estados for e1 in self.estados}
+
         self.b = {(si,vj):prob(si,vj) for si in self.estados for vj in self.observables}
+
 # Ejemplo de HMM generado para una cuadrícula básica:
     
 cuadr0=["ooo",
@@ -534,14 +649,9 @@ seq_rn1=[(1, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 1), (0, 1, 0, 1),
 # Usando Viterbi, estimamos las casillas por las que ha pasado:
 
 print(robot_rn.a)
-#print(viterbi(robot_rn,seq_rn1))
+print("Viterbi - Robot")
+print(viterbi(robot_rn,seq_rn1))
 # [(3, 14), (3, 13), (3, 12), (3, 13), (3, 14), (3, 15), (3, 14)]
-
-
-
-
-
-
 
 # ========================================================
 # Ejercicio 4
@@ -568,23 +678,24 @@ def compara_secuencias(seq1,seq2):
 
 
 # Generamos una secuencia de 20 estados y observaciones
-# >>> seq_e,seq_o=muestreo_hmm(rn_hmm,20)
+seq_e,seq_o=muestreo_hmm(robot_rn,20)
 
-# >>> seq_o 
+print()
+print(seq_o)
 # [(0, 0, 1, 1), (0, 1, 1, 0), (1, 1, 0, 0),....]
 
-# >>> seq_e
+print(seq_e)
 # [(2, 5),(3, 5), (3, 4), (3, 3), (3, 4), ....]
  
-# >>> seq_estimada=viterbi(rn_hmm,seq_o)
+seq_estimada=viterbi(robot_rn,seq_o)
 
-# >>> seq_estimada
+print(seq_estimada)
 # [(2, 5),(3, 5),(3, 4),(3, 3),(3, 4),(3, 5),...]
  
 # Vemos, cuántas coincidencias hay, proporcinalmente al total de estados de la 
 # secuencia:
     
-# >>> compara_secuencias(seq_e,seq_estimada)
+print(compara_secuencias(seq_e,seq_estimada))
 # 0.95
 
 # -----------------------------------
@@ -608,6 +719,5 @@ def compara_secuencias(seq1,seq2):
 # n, con varios valores de epsilon y con un m suficientemente grande para que 
 # la media devuelta sea significativa del rendimiento del algoritmo. 
 
-
-
-
+def experimento_hmm_robot(cuadrícula,epsilon,n,m):
+    return None
