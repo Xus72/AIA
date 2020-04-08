@@ -384,14 +384,20 @@ class Robot(HMM):
                     if estados[i][j] == "o":
                         estado.append((i,j))
             return estado
+        
         def cal_a(e,e1):
-            n_vecinos = 0
-            if (abs(e1[0] - e[0]) == 1 and abs(e1[1] - e[1]) == 0
-                    or abs(e1[0] - e[0]) == 0 and abs(e1[1] - e[1]) == 1): 
-                n_vecinos = len(vecinos(e))
+            n_vecinos = len(vecinos(e))
             if n_vecinos != 0:
-                return (1/n_vecinos)
-            return 0
+                if (abs(e1[0] - e[0]) == 1 and abs(e1[1] - e[1]) == 0
+                    or abs(e1[0] - e[0]) == 0 and abs(e1[1] - e[1]) == 1):
+                        return (1/n_vecinos)
+                else:
+                    return 0
+            else:
+                if e1 == e:
+                    return 1
+                else:
+                    return 0
 
         def vecinos(e):
             lista_vecinos = []
