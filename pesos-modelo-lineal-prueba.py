@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Apr 14 17:47:08 2020
 
-@author: jruiz
-"""
 
 # AMPLIACIÓN DE INTELIGENCIA ARTIFICAL
 
@@ -21,6 +17,9 @@ Created on Tue Apr 14 17:47:08 2020
 
 # Comprobar también si el mejor vector de pesos con respecto a esos 90 ejemplos
 # es también el mejor con respecto a los diez últimos.  
+
+import pandas as pd
+import numpy as np
 
 w1=[-1.29534026,  1.23835128,  0.12877138, -2.96549057, -0.35841744,
     2.82746578,  2.21482984, -1.65336872, -0.47153383, -0.44702348,
@@ -43,6 +42,10 @@ w5=[ 3.75038563, -1.05615946, -1.46526707,  2.11298963, -0.5708379 ,
              1.55773606, 1.11062204,  2.65842872,  3.13673974, -1.91793153,
             -1.83749571]
 
+df = pd.read_csv('datos-aia-prueba.csv', header=None)
 
+
+
+print(df)
 
 
