@@ -44,14 +44,18 @@ w5=[ 3.75038563, -1.05615946, -1.46526707,  2.11298963, -0.5708379 ,
 
 df = pd.read_csv('datos-aia-prueba.csv', header=None)
 
-#Elimino la ultima columna
-train = df.drop(df.columns[[10]],axis='columns')
+set = df.drop(columns=[10])
 
 #Declaro el conjunto de entrenamiento cogiendo las 90 primeras filas
-train_set = df.iloc[:90]
+train_set = set.iloc[:90]
 
 #Declaro el conjunto de test cogiendien las 10 ultimas filas del dataset
-test_set = df.iloc[91:100]
+test_set = set.iloc[91:100]
 
+
+
+print(set)
+print(train_set)
+print(test_set)
 
 
