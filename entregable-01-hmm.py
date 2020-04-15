@@ -42,7 +42,6 @@
 # *****************************************************************************
 
 import random
-import numpy as np
 
 # Lo que sigue es la implementación de la clase HMM vista en la práctica 2,
 # que representa de manera genérica un modelo oculto de Markov.
@@ -86,8 +85,6 @@ ej2_hmm=HMM(["l","no l"],
             ["u","no u"],   
             [[0.9,0.1],[0.2,0.8]])
 
-print(ej1_hmm.b[('c',ej1_hmm.observables[0])])
-
 # ========================================================
 # Ejercicio 1
 # ========================================================
@@ -120,23 +117,33 @@ print(ej1_hmm.b[('c',ej1_hmm.observables[0])])
 # calcule la lista: [s_1, ..., s_t] con la sucesión de estados más
 # probables usando adecuadamente el algoritmo de Viterbi.
 
+#Función Viterbi
 def viterbi(hmm,observaciones):
+    long_o = len(observaciones)
+    nu_dic = {e:[0 for _ in range(long_o)] for e in hmm.estados}
+    pr_dic = {e:[0 for _ in range(long_o)] for e in hmm.estados}
     pr = list()
-    nu_dic = {e: [0 for _ in range(len(observaciones))] for e in hmm.estados}
-    pr_dic = {e: [0 for _ in range(len(observaciones))] for e in hmm.estados}
     for e in hmm.estados:
+        #Nu de la primera iteración
         nu_dic[e][0] = hmm.b[e,observaciones[0]] * hmm.pi[e]
-    for k,o in zip(range(1,len(observaciones)),observaciones[1:]):
+    for k,o in zip(range(1,long_o),observaciones[1:]):
         for e in hmm.estados:
             nu_dic[e][k] = hmm.b[(e,o)] * max(hmm.a[(e1,e)]*nu_dic[e1][k-1] for e1 in hmm.estados)
+            #Calculo las transiciones para cada estado.
             pr = [hmm.a[(e1,e)]*nu_dic[e1][k-1] for e1 in hmm.estados]
+            #Calculo el indice de la transición de mayor probabilidad
             indice = pr.index(max(pr))
+            #Calculo el estado que me da dicha probabilidad
             pr_dic[e][k] = hmm.estados[indice]
     nu = [nu_dic[k][-1] for k in hmm.estados]
+    #Calculo el índice de la mayor probabilidad en la última iteración
     ind_nu = nu.index(max(nu))
+    #El estado que me da esa probabilidad
     nu_e = hmm.estados[ind_nu]
     s = [nu_e]
-    for i in range(len(observaciones)-1,0,-1):
+    #Calculo de la secuencia más probable
+    for i in range((long_o)-1,0,-1):
+        #Estado anterior al actual
         estado_ant = pr_dic[nu_e][i]
         s.insert(0,estado_ant)
         nu_e = estado_ant
@@ -162,14 +169,14 @@ print(viterbi(ej2_hmm,["u","u","no u"]))
 # incluir la "infraestructura" necesaria y poder obtener la secuencia de
 # estados más probable.
 
-'''def viterbi_pre(hmm,observaciones):
+def viterbi_pre(hmm,observaciones):
         """Versión pre-Viterbi que calcula los nu_k"""
         nu_list=[hmm.b[(e,observaciones[0])]*hmm.pi[e] for e in hmm.estados]
         for o in observaciones[1:]:
 
             nu_list=[hmm.b[(e,o)]*max(hmm.a[(e1,e)]*nu for (e1,nu) in zip(hmm.estados,nu_list)) 
             for e in hmm.estados]
-        return nu_list'''
+        return nu_list
 
 
 # ========================================================
@@ -219,6 +226,8 @@ print(viterbi(ej2_hmm,["u","u","no u"]))
 # observación sería 1. En resumen, hemos generado la secuencia de estados
 # [c,f,f] con la correspondiente secuencia de observaciones [2,1,1].
 
+
+#Funcion para calcular el estado inicial de la secuencia
 def cal_e(dic):
     n_random = random.random()
     prob = 0
@@ -227,7 +236,7 @@ def cal_e(dic):
         if prob >= n_random:
             estado = x
             return estado
-
+#Funcion para calcular la observacion de la secuencia
 def cal_o(hmm,estado):
     observables = hmm.observables
     n_random = random.random()
@@ -238,6 +247,7 @@ def cal_o(hmm,estado):
             observable = observables[i]
             return observable
 
+#Funcion para calcular el estado siguiente de la observacion
 def estado_siguiente(hmm,estado):
     n_random = random.random()
     prob = 0
@@ -246,16 +256,17 @@ def estado_siguiente(hmm,estado):
         if prob >= n_random:
             sig_estado = hmm.estados[i]
             return sig_estado
-    #return hmm.estados[-1]
 
 def muestreo_hmm(hmm,n):
     sec_estados = []
     sec_observaciones = []
     for i in range(n):
+        #Si estamos en la primera iteración, calculamos el estado inicial de la secuencia y la primera observacion
         if i == 0:
             sec_estados.append(cal_e(hmm.pi))
             sec_observaciones.append(cal_o(hmm,sec_estados[-1]))
         else:
+            #Calculamos los estados siguientes y el resto de observaciones
             sec_estados.append(estado_siguiente(hmm,sec_estados[-1]))
             sec_observaciones.append(cal_o(hmm,sec_estados[-1]))
     return [sec_estados,sec_observaciones]
@@ -264,20 +275,21 @@ def muestreo_hmm(hmm,n):
 
 # Ejemplos (téngase en cuenta que la salida está sujeta a aleatoriedad):
 
-
+print("Ejercicio 2\n")
 print(muestreo_hmm(ej1_hmm,10))
 # [['c', 'c', 'f', 'f', 'c', 'c', 'c', 'c', 'c', 'c'],
 #  [2, 1, 1, 1, 3, 2, 1, 2, 3, 1]]
-
+print("\n")
 print(muestreo_hmm(ej1_hmm,10))
 # [['c', 'c', 'f', 'f', 'f', 'f', 'c', 'c', 'c', 'c'],
 #  [1, 1, 1, 1, 3, 1, 2, 3, 2, 3]]
 
-
+print("\n")
 print(muestreo_hmm(ej2_hmm,7))
 # [['l', 'l', 'l', 'l', 'no l', 'l', 'l'],
 #  ['u', 'u', 'u', 'u', 'no u', 'u', 'u']]
 
+print("\n")
 print(muestreo_hmm(ej2_hmm,7))
 # [['no l', 'no l', 'no l', 'no l', 'no l', 'no l', 'l'],
 #  ['no u', 'no u', 'u', 'no u', 'no u', 'no u', 'u']]
@@ -376,29 +388,37 @@ print(muestreo_hmm(ej2_hmm,7))
 class Robot(HMM):
 
     def __init__(self,estados,error):
-        
+        #Funcion para transformar la cuadricula en una secuencia de tuplas de estados
         def parser_estado(estados):
             estado = []
             for i in range(len(estados)):
                 for j in range(len(estados[i])):
+                    #Si la casilla de la cuadricula es una "o" lo añadimos a la secuencia de estados
                     if estados[i][j] == "o":
                         estado.append((i,j))
             return estado
-        
+
+        #Funcion para calcular la matriz de transición
         def cal_a(e,e1):
+            #Calculamos el nº de vecinos del estado actual
             n_vecinos = len(vecinos(e))
+            #En caso de tener vecinos, calculamos la distancia al reste de estados
             if n_vecinos != 0:
+                #En caso de ser vecinos, devolvemos la probabilidad de ir a ese estado
                 if (abs(e1[0] - e[0]) == 1 and abs(e1[1] - e[1]) == 0
                     or abs(e1[0] - e[0]) == 0 and abs(e1[1] - e[1]) == 1):
                         return (1/n_vecinos)
                 else:
                     return 0
             else:
+                #Si no tiene vecinos, devolvemos que la probabilidad de quedarnos en el estado actual es 1
                 if e1 == e:
                     return 1
+                #Como es una casilla aislada, no podemos ir a otro estado
                 else:
                     return 0
 
+        #Funcion para calcular los vecinos de un estado
         def vecinos(e):
             lista_vecinos = []
             for e1 in self.estados:
@@ -407,20 +427,26 @@ class Robot(HMM):
                         lista_vecinos.append(e1)        
             return lista_vecinos
 
+        #Función para calcular la matriz b
         def prob(e,observacion):
             epsilon_error = 1
             errores = []
+            #Obtenemos los vecinos del estado actual
             list_vecino = vecinos(e)
+            #Comprobamos si el estado actual tiene un vecino al norte
             if (e[0]-1,e[1]) in list_vecino:
+                #En caso de tenerlo, comprobamos que no se equivoca el sensor del robot
                 if observacion[0] == 0:
                     errores.append(1-error)
                 else:
                     errores.append(error)
+            #Si no tiene, también comprobamos si el sensor se equivoca o no
             else:
                 if observacion[0] == 1:
                     errores.append(1-error)
                 else:
                     errores.append(error)
+            #Vecino al sur
             if (e[0]+1,e[1]) in list_vecino:
                 if observacion[1] == 0:
                     errores.append(1-error)
@@ -431,6 +457,7 @@ class Robot(HMM):
                     errores.append(1-error)
                 else:
                     errores.append(error)
+            #Vecino al este
             if (e[0],e[1]+1) in list_vecino:
                 if observacion[2] == 0:
                     errores.append(1-error)
@@ -441,6 +468,7 @@ class Robot(HMM):
                     errores.append(1-error)   
                 else:
                     errores.append(error)
+            #Vecno al oeste
             if (e[0],e[1]-1) in list_vecino:
                 if observacion[3] == 0:
                     errores.append(1-error)
@@ -451,6 +479,7 @@ class Robot(HMM):
                     errores.append(1-error)
                 else:
                     errores.append(error)
+            #Recorremos la lista con los errores y se lo multiplicamos a el error inicial
             for i in errores:
                 epsilon_error *= i
             return epsilon_error
@@ -526,6 +555,7 @@ seq_rn1=[(1, 1, 0, 0), (0, 1, 0, 0), (0, 1, 0, 1), (0, 1, 0, 1),
 # Usando Viterbi, estimamos las casillas por las que ha pasado:
 
 print(robot_rn.estados)
+print("\n")
 print("Viterbi - Robot")
 print(viterbi(robot_rn,seq_rn1))
 # [(3, 14), (3, 13), (3, 12), (3, 13), (3, 14), (3, 15), (3, 14)]
@@ -556,22 +586,24 @@ def compara_secuencias(seq1,seq2):
 
 # Generamos una secuencia de 20 estados y observaciones
 seq_e,seq_o=muestreo_hmm(robot_rn,20)
-
+print("\n")
 print("secuencia de observaciones")
 print(seq_o)
 # [(0, 0, 1, 1), (0, 1, 1, 0), (1, 1, 0, 0),....]
+print("\n")
 print("secuencia de estados")
 print(seq_e)
 # [(2, 5),(3, 5), (3, 4), (3, 3), (3, 4), ....]
  
 seq_estimada=viterbi(robot_rn,seq_o)
-
+print("\n")
+print("Secuencia estimada")
 print(seq_estimada)
 # [(2, 5),(3, 5),(3, 4),(3, 3),(3, 4),(3, 5),...]
  
 # Vemos, cuántas coincidencias hay, proporcinalmente al total de estados de la 
 # secuencia:
-
+print("\n")
 print("Coincidencias") 
 print(compara_secuencias(seq_e,seq_estimada))
 # 0.95
@@ -597,18 +629,23 @@ print(compara_secuencias(seq_e,seq_estimada))
 # n, con varios valores de epsilon y con un m suficientemente grande para que 
 # la media devuelta sea significativa del rendimiento del algoritmo. 
 
+#Función del experimento
 def experimento_hmm_robot(cuadricula,epsilon,n,m):
+    #Definimos el objeto Robot
     robot = Robot(cuadricula,epsilon)
     prop_coincidencias = 0
     for experimentos in range(m):
+        #Calculamos la secuencia de estados y de observaciones
         secuencia_estados,secuencia_observaciones = muestreo_hmm(robot,n)
+        #Calculamos la secuencia más probable
         sec_estados_prob = viterbi(robot,secuencia_observaciones)
+        #Proporción de coincidencias
         prop_coincidencias += compara_secuencias(secuencia_estados,sec_estados_prob)
     media_experimentos = prop_coincidencias/m
     return media_experimentos
 
 
-#Tiene que dar 0.8 minimo
+#Un bucle for para comprobar que la función experimento funciona bien. Realiza 5 experimentos
 for i in range(1,6):
-    print("Experimento {}".format(i))
-    print(experimento_hmm_robot(cuadr_rn,0.15,20,1000))
+    print("\nExperimento {}".format(i))
+    print("Resultado {}".format(experimento_hmm_robot(cuadr_rn,0.15,20,1000)))
