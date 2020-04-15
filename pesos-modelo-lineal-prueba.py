@@ -19,7 +19,7 @@
 # es también el mejor con respecto a los diez últimos.  
 
 import pandas as pd
-import numpy as np
+from sklearn.model_selection import train_test_split
 
 w1=[-1.29534026,  1.23835128,  0.12877138, -2.96549057, -0.35841744,
     2.82746578,  2.21482984, -1.65336872, -0.47153383, -0.44702348,
@@ -44,8 +44,14 @@ w5=[ 3.75038563, -1.05615946, -1.46526707,  2.11298963, -0.5708379 ,
 
 df = pd.read_csv('datos-aia-prueba.csv', header=None)
 
+#Elimino la ultima columna
+train = df.drop(df.columns[[10]],axis='columns')
 
+#Declaro el conjunto de entrenamiento cogiendo las 90 primeras filas
+train_set = df.iloc[:90]
 
-print(df)
+#Declaro el conjunto de test cogiendien las 10 ultimas filas del dataset
+test_set = df.iloc[91:100]
+
 
 
