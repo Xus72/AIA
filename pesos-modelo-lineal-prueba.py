@@ -18,9 +18,7 @@
 # Comprobar también si el mejor vector de pesos con respecto a esos 90 ejemplos
 # es también el mejor con respecto a los diez últimos.  
 
-import csv
-import pandas as pd
-import numpy as np
+import csv, random
 
 
 w1=[-1.29534026,  1.23835128,  0.12877138, -2.96549057, -0.35841744,
@@ -73,7 +71,7 @@ print(error_cuadratico_medio(X_train,y_train,w2))
 print(error_cuadratico_medio(X_train,y_train,w3))
 print(error_cuadratico_medio(X_train,y_train,w4))
 print(error_cuadratico_medio(X_train,y_train,w5))
-
+print(len(X_train))
 print("\nSet de test")
 print(error_cuadratico_medio(X_test,y_test,w1))
 print(error_cuadratico_medio(X_test,y_test,w2))
@@ -82,28 +80,24 @@ print(error_cuadratico_medio(X_test,y_test,w4))
 print(error_cuadratico_medio(X_test,y_test,w5))
 
 #Descenso estocástico por el gradiente
-def aprende_pesos(train,valor,rango_inicial,n_epochs,tasa=0.1):
-    #usar rango -3,3
-    return w
+def aprende_pesos(train,valor_train,rango_inicial,n_epochs,tasa):
+    n_atributos = len(train[0])
+    #Si tenemos un set de entrenaiento con x columnas, el vector de pesos tiene que tener x+1
+    w = [random.uniform(-rango_inicial,rango_inicial) for _ in range(n_atributos)]  
+    indices = list(range(len(train)))
+    #epochs = pasadas completas al set de entrenamiento
+    for n in range(n_epochs):
+        #Reorganizamos los índices. Li hacemos para escapar de los óptimos locales
+        random.shuffle(indices)
+        #w = [wi + tasa*xi*e for xi,wi in zip(Xj, w)]
+        for j in indices:
+            x = train[j]
+            y_esperado = valor_train[j]
+            y_predict = combinacion_lineal(w,x)
+            for i in range(n_atributos):
+                w[i]+=tasa*(y_esperado-y_predict)*x[i]
+            #print("Pesos {}".format(w))
+            #print("Error cuadrático: {}".format(error_cuadratico_medio(X_train,y_train,w)))
+    return w    
 
-#Resuelto con librerias ML
-
-df = pd.read_csv('datos-aia-prueba.csv', header=None)
-
-set = df.drop(columns=[10])
-
-#Declaro el conjunto de entrenamiento cogiendo las 90 primeras filas
-train_set = set.iloc[:90]
-
-#Declaro el conjunto de test cogiendien las 10 ultimas filas del dataset
-test_set = set.iloc[91:100]
-
-theta = train_set[0] * np.transpose(w1).shape
-
-error = 0
-
-#def f_err_cuad (w, x):
-#     return (x[-1] - (w[0] + np.dot(np.array(w[1:]), np.array(x[:-1]))))**2
-
-
-
+print(aprende_pesos(X_train,y_train,4,20,0.01))
